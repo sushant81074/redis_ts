@@ -3,8 +3,10 @@ import { getter, setter, sleeper } from "../handlers/str";
 
 import { push, pop, lrange, llen, bpop } from "../handlers/list";
 import { EListCmdMode, type TSetCmd, type TSleepCmd } from "../interfaces";
-import { setExpiry, setPExpiry, getTtl, getPTtl, getType } from "../handlers/common";
+import { setExpiry, setPExpiry, getTtl, getPTtl, getType, cmdStore, multi, exec } from "../handlers/common";
 import { xadd, xdel, xlen, xrange, xread, xtrim } from "../handlers/stream";
+import { CONN_CMDS } from "../cache/data";
+import { dec, inc } from "../handlers/txns";
 
 const serialize = (d: Buffer) => d.toString("utf-8").trim();
 
@@ -12,6 +14,9 @@ export const onData = (socketConn: net.Socket, d: Buffer) => {
     const data = serialize(d);
     const [first, ...rest] = data.split(" ").filter(Boolean);
     console.log(data, first, rest);
+
+    let connAddress = `${socketConn.remoteAddress}:${socketConn.remotePort}`;
+    if (first.toLowerCase() !== "exec" && CONN_CMDS.has(connAddress)) { cmdStore(socketConn, d); return; }
 
     if (data) {
         switch (first.toLowerCase()) {
@@ -39,6 +44,12 @@ export const onData = (socketConn: net.Socket, d: Buffer) => {
             case "xlen": xlen(socketConn, rest); break;
             case "xdel": xdel(socketConn, rest); break;
             case "xtrim": xtrim(socketConn, rest); break;
+            case "inc": inc(socketConn, rest); break;
+            case "incby": inc(socketConn, rest); break;
+            case "dec": dec(socketConn, rest); break;
+            case "decby": dec(socketConn, rest); break;
+            case "multi": multi(socketConn); break;
+            case "exec": exec(socketConn); break;
             case "quit": socketConn.end("socket connection closed!\r\n"); break; // we'll create separate handlers for it later, for now we can just end the connection with a message
             default: socketConn.write("Invalid Command\r\n"); break;
         }

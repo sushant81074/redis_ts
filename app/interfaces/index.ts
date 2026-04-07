@@ -1,14 +1,19 @@
 import * as net from "net";
 import { type DoublyLinkedList } from "../services/doublyLinkedList";
 
-export const tokens = ["px", "ex", "nx", "xx", "pxat", "exat", "echo", "set", "get", "nil", "expiry", "pexpiry", "ttl", "pttl", "sleep", "rpush", "rpop", "lpush", "lpop", "lrange", "llen", "blpop", "brpop"];
+export const tokens = ["px", "ex", "nx", "xx", "pxat", "exat", "echo", "set", "get", "nil", "expiry", "pexpiry", "ttl", "pttl", "sleep", "rpush", "rpop", "lpush", "lpop", "lrange", "llen", "blpop", "brpop", "inc", "incby", "incbyffloat", "dec", "decby"];
 
 export const enum EXNMode { NX = "nx", XX = "xx" }
 export const enum ETtlType { PX = "px", EX = "ex", NONE = "none", PXAT = "pxat", EXAT = "exat" };
-export const enum EDataType { STRING = "string", LIST = "list", SET = "set", HASH = "hash", ZSET = "zset", STREAM = "stream", VECTOR_SET = "vectorset", JSON = "json" };
+export const enum EDataType { NUMBER = "number", STRING = "string", LIST = "list", SET = "set", HASH = "hash", ZSET = "zset", STREAM = "stream", VECTOR_SET = "vectorset", JSON = "json" };
 
 export type TValMeta = { ttl: string, ttlType: ETtlType, at: number; dType: EDataType; };
-export type TValue = TValMeta & { v: string | DoublyLinkedList; };
+
+export type TValStr = TValMeta & { v: string; };
+export type TValNum = TValMeta & { v: number; };
+export type TValList = TValMeta & { v: DoublyLinkedList; };
+
+export type TValue = TValStr | TValNum | TValList;
 export type TSetCmd = [string, string, ETtlType & EXNMode, string, EXNMode];
 export type TSleepCmd = [string, string, string, ...TSetCmd];
 

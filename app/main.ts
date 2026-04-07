@@ -6,8 +6,6 @@ config({ path: ".env" });
 
 const port = process.env.PORT || 6379;
 
-console.log("Logs from your program will appear here!");
-
 const server: net.Server = net.createServer((socketConn: net.Socket) => {
 
     const clientId = `${socketConn.remoteAddress}:${socketConn.remotePort}`;
@@ -19,7 +17,7 @@ const server: net.Server = net.createServer((socketConn: net.Socket) => {
 
 });
 
-server.listen(port);
+server.listen(port, () => console.log("redis server running on port:", port));
 
 // const serialize = (data: string) => {
 //     // let data = d.toString("utf-8");

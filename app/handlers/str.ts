@@ -1,7 +1,7 @@
 import * as net from "net";
 import { EDataType, ETtlType, EXNMode, tokens, type TSleepCmd, type TValue } from "../interfaces";
 import { isExpired, sleep } from "../services/data";
-import  { DATA } from "../cache/data";
+import { DATA } from "../cache/data";
 
 export const setter = (conn: net.Socket, [k, v, ...rest]: string[]) => {
     if (!(!!k) || typeof k != "string") { conn.write("ERROR: Key must be a valid String\r\n"); return; }
@@ -10,8 +10,8 @@ export const setter = (conn: net.Socket, [k, v, ...rest]: string[]) => {
     if (tokens.includes(k.toLowerCase())) { conn.write("ERROR: Key must be a valid String\r\n"); return; }
     if (tokens.includes(v.toLowerCase())) { conn.write("ERROR: Value must be a valid String\r\n"); return; }
 
-    let ttl: string = "";
-    let ttlType: ETtlType = ETtlType.NONE;
+    let ttl = "";
+    let ttlType = ETtlType.NONE;
     let mode: EXNMode | undefined;
 
     rest.forEach((e, i) => {
@@ -31,7 +31,6 @@ export const setter = (conn: net.Socket, [k, v, ...rest]: string[]) => {
         }
     });
 
-    console.log({ ttl, ttlType, mode });
     const exists = (!!DATA.get(k)?.v);
     if (mode == EXNMode.NX && exists) {
         conn.write("nil\r\n");
@@ -40,8 +39,12 @@ export const setter = (conn: net.Socket, [k, v, ...rest]: string[]) => {
         conn.write("nil\r\n");
         return;
     }
-    console.log({ v, ttl, ttlType, at: Date.now() });
-    DATA.set(k, { v, ttl, ttlType, at: Date.now(), dType: EDataType.STRING });
+
+    if (!isNaN(Number(v))) {
+        DATA.set(k, { v: Number(v), ttl, ttlType, at: Date.now(), dType: EDataType.NUMBER });
+    } else {
+        DATA.set(k, { v, ttl, ttlType, at: Date.now(), dType: EDataType.STRING });
+    }
     conn.write("OK\r\n");
 
     return;
