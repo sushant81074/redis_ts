@@ -1,23 +1,25 @@
-import * as net from "net";
 import { getter, setter, sleeper } from "../handlers/str";
 
 import { push, pop, lrange, llen, bpop } from "../handlers/list";
-import { EListCmdMode, type TSetCmd, type TSleepCmd } from "../interfaces";
+import { EListCmdMode, type TAuthenticConn, type TSetCmd, type TSleepCmd } from "../interfaces";
 import { setExpiry, setPExpiry, getTtl, getPTtl, getType, multi, exec, info, watch } from "../handlers/common";
 import { xadd, xdel, xlen, xrange, xread, xtrim } from "../handlers/stream";
 import { dec, inc } from "../handlers/txns";
-import { serializeAndChecker } from "../helpers";
+import { serialize, queueCmd } from "../helpers";
+import { authenticate } from "../middlewares/auth";
 
-export const onData = (conn: net.Socket, d: Buffer, fromExec?: boolean) => {
+export const onData = async (conn: TAuthenticConn, d: Buffer, fromExec?: boolean) => {
 
-    const { data, first, rest } = serializeAndChecker(d, conn, fromExec);
+    const { first, rest } = serialize(d);
+    if (!conn.isAuthentic) { authenticate(conn, first, rest); }
+    const move = queueCmd(conn, d, first, fromExec);
 
-    if (data) {
+    if (first && move) {
         switch (first.toLowerCase()) {
             case "echo": conn.write(rest.join(" ").concat("\r\n")); break;
             case "ping": conn.write("+PONG\r\n"); break;
-            case "set": { console.log("set called"); setter(conn, rest as TSetCmd); } break;
-            case "get": { console.log("get called"); getter(conn, rest); } break;
+            case "set": setter(conn, rest as TSetCmd); break;
+            case "get": getter(conn, rest); break;
             case "sleep": sleeper(conn, rest as TSleepCmd); break;
             case "expiry": setExpiry(conn, rest); break;
             case "pexpiry": setPExpiry(conn, rest); break;
@@ -47,6 +49,7 @@ export const onData = (conn: net.Socket, d: Buffer, fromExec?: boolean) => {
             case "watch": watch(conn, rest); break;
             case "info": info(conn); break;
             case "quit": conn.end("socket connection closed!\r\n"); break; // we'll create separate handlers for it later, for now we can just end the connection with a message
+            case "auth": conn.write("OK!\r\n"); break;
             default: conn.write("Invalid Command\r\n"); break;
         }
     }

@@ -1,9 +1,8 @@
-import * as net from "net";
-import { EDataType, ETtlType, EXNMode, tokens, type TSleepCmd, type TValue } from "../interfaces";
+import { EDataType, ETtlType, EXNMode, tokens, type TAuthenticConn, type TSleepCmd, type TValue } from "../interfaces";
 import { isExpired, sleep } from "../services/data";
 import { DATA } from "../cache/data";
 
-export const setter = (conn: net.Socket, [k, v, ...rest]: string[]) => {
+export const setter = (conn: TAuthenticConn, [k, v, ...rest]: string[]) => {
     if (!(!!k) || typeof k != "string") { conn.write("ERROR: Key must be a valid String\r\n"); return; }
     if (!(!!v)) { conn.write("ERROR: Key must be followed by a Value\r\n"); return; }
 
@@ -49,7 +48,7 @@ export const setter = (conn: net.Socket, [k, v, ...rest]: string[]) => {
     return;
 };
 
-export const getter = (conn: net.Socket, [k]: string[]) => {
+export const getter = (conn: TAuthenticConn, [k]: string[]) => {
     let v: TValue | "nil" = DATA.get(k) || "nil";
     if (v != "nil" && v.ttlType != ETtlType.NONE) {
         // passive expiry
@@ -59,7 +58,7 @@ export const getter = (conn: net.Socket, [k]: string[]) => {
     return;
 };
 
-export const sleeper = async (conn: net.Socket, [t, _, first, ...rest]: TSleepCmd) => {
+export const sleeper = async (conn: TAuthenticConn, [t, _, first, ...rest]: TSleepCmd) => {
     await sleep(Number(t) * 1000);
     if (first == "get") getter(conn, rest);
     else if (first == "set") setter(conn, rest);

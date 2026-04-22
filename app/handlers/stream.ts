@@ -1,5 +1,4 @@
-import * as net from "net";
-import { EDataType, ETtlType, tokens, type TStreamValue } from "../interfaces";
+import { EDataType, ETtlType, tokens, type TAuthenticConn, type TStreamValue } from "../interfaces";
 import { NET_CONN, STREAMS } from "../cache/data";
 
 const compareIds = (a: string, b: string): number => {
@@ -20,7 +19,7 @@ const streamRange = (stream: TStreamValue, startId: string, endId: string, count
     return result;
 };
 
-export const xadd = (conn: net.Socket, d: string[]) => {
+export const xadd = (conn: TAuthenticConn, d: string[]) => {
     if (d.find(e => tokens.includes(e))) {
         conn.write("ERROR: Invalid Command\r\n"); return;
     }
@@ -120,7 +119,7 @@ export const xadd = (conn: net.Socket, d: string[]) => {
     return;
 };
 
-export const xread = (conn: net.Socket, d: string[]) => {
+export const xread = (conn: TAuthenticConn, d: string[]) => {
     if (d.find(e => tokens.includes(e)) || d.length < 3) {
         conn.write("ERROR: Invalid Command 1\r\n"); return;
     }
@@ -158,7 +157,6 @@ export const xread = (conn: net.Socket, d: string[]) => {
         keyIdPairs.push([key, id]);
     }
     xr["streams"] = keyIdPairs;
-    console.log(xr);
 
     const result = [];
     let block = true;
@@ -201,18 +199,18 @@ export const xread = (conn: net.Socket, d: string[]) => {
     return;
 };
 
-export const xrange = (conn: net.Socket, []: string[]) => {
+export const xrange = (conn: TAuthenticConn, []: string[]) => {
 
 };
 
-export const xlen = (conn: net.Socket, [k]: string[]) => {
+export const xlen = (conn: TAuthenticConn, [k]: string[]) => {
     const stream = STREAMS.get(k);
     if (!stream || STREAMS.isExpired(stream) || !stream.ids.length || stream.del) { conn.write("nil\r\n"); return; }
     conn.write("integer" + stream.ids.length + "\r\n");
     return;
 };
 
-export const xdel = (conn: net.Socket, [k, ...ids]: string[]) => {
+export const xdel = (conn: TAuthenticConn, [k, ...ids]: string[]) => {
     if (!k || !ids.length) { conn.write("ERR: Invalid XDEL Command\r\n"); return; }
     const stream = STREAMS.get(k);
     if (!stream || STREAMS.isExpired(stream) || !stream.ids.length || stream.del) { conn.write("nil\r\n"); return; }
@@ -232,7 +230,7 @@ export const xdel = (conn: net.Socket, [k, ...ids]: string[]) => {
     return;
 };
 
-export const xtrim = (conn: net.Socket, [key, strategy, ...args]: string[]) => {
+export const xtrim = (conn: TAuthenticConn, [key, strategy, ...args]: string[]) => {
     if (!key || !strategy) {
         conn.write("ERR wrong number of arguments for XTRIM\r\n");
         return;

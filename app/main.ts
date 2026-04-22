@@ -2,6 +2,7 @@ import * as net from "net";
 import { config } from "dotenv";
 import { onData } from "./controllers";
 import { analizePort } from "./utils/portAnalizer";
+import type { TAuthenticConn } from "./interfaces";
 
 config({ path: ".env" });
 
@@ -13,9 +14,10 @@ let port = 8080;
 const server: net.Server = net.createServer((conn: net.Socket) => {
 
     const clientId = `${conn.remoteAddress}:${conn.remotePort}`;
+    const authenticConn = conn as TAuthenticConn;
     console.log(`client ${clientId} connected!`);
 
-    conn.on("data", (d: Buffer) => onData(conn, d));
+    conn.on("data", (d: Buffer) => onData(authenticConn, d));
     conn.on("close", (e: boolean) => console.log("connection closed ?", e));
     conn.on("error", (e: Error) => console.log("error occured", e));
 

@@ -1,8 +1,7 @@
-import * as net from "net";
 import { DATA } from "../cache/data";
-import { EDataType, ETtlType } from "../interfaces";
+import { EDataType, ETtlType, type TAuthenticConn } from "../interfaces";
 
-export const inc = (conn: net.Socket, [k, ...v]: string[]) => {
+export const inc = (conn: TAuthenticConn, [k, ...v]: string[]) => {
     let i = v[0] ? Number(v[0]) : 1;
     if (isNaN(i)) {
         conn.write("ERR value is not an integer or out of range\r\n");
@@ -32,7 +31,7 @@ export const inc = (conn: net.Socket, [k, ...v]: string[]) => {
     return;
 };
 
-export const dec = (conn: net.Socket, [k, ...v]: string[]) => {
+export const dec = (conn: TAuthenticConn, [k, ...v]: string[]) => {
     const d = v[0] ? Number(v[0]) : 1;
     if (isNaN(d)) {
         conn.write("ERR value is not an integer or out of range\r\n");

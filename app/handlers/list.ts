@@ -1,9 +1,9 @@
 import { DATA, NET_CONN } from "../cache/data";
-import { EDataType, ETtlType, tokens } from "../interfaces";
+import { EDataType, ETtlType, tokens, type TAuthenticConn } from "../interfaces";
 import { isExpired } from "../services/data";
 import { DoublyLinkedList } from "../services/doublyLinkedList";
 
-export const push = (conn: any, flag: "r" | "l", rest: string[]) => {
+export const push = (conn: TAuthenticConn, flag: "r" | "l", rest: string[]) => {
     const [k, ...v] = rest;
     if (!(!!k) || typeof k != "string") { conn.write("ERROR: Key must be a valid String\r\n"); return; }
     if (!(!!v)) { conn.write("ERROR: Key must be followed by a Value\r\n"); return; }
@@ -47,7 +47,7 @@ export const push = (conn: any, flag: "r" | "l", rest: string[]) => {
     return;
 };
 
-export const pop = (conn: any, flag: "r" | "l", rest: string[]) => {
+export const pop = (conn: TAuthenticConn, flag: "r" | "l", rest: string[]) => {
     const [k] = rest;
     if (!(!!k) || typeof k != "string") { conn.write("ERROR: Key must be a valid String\r\n"); return; }
 
@@ -68,7 +68,7 @@ export const pop = (conn: any, flag: "r" | "l", rest: string[]) => {
     return;
 };
 
-export const lrange = (conn: any, rest: string[]) => {
+export const lrange = (conn: TAuthenticConn, rest: string[]) => {
     const [k, start, stop] = rest;
     if (!k || typeof k != "string") { conn.write("ERROR: Key must be a valid String\r\n"); return; }
     if (isNaN(Number(start)) || isNaN(Number(stop))) { conn.write("ERROR: Start and Stop must be valid numbers\r\n"); return; }
@@ -83,7 +83,7 @@ export const lrange = (conn: any, rest: string[]) => {
     conn.write(vals.map((v: string) => `$${v.length}\r\n${v}\r\n`).join(""));
     return;
 };
-export const llen = (conn: any, [k]: string[]) => {
+export const llen = (conn: TAuthenticConn, [k]: string[]) => {
     if (!k || typeof k != "string") { conn.write("ERROR: Key must be a valid String\r\n"); return; }
 
     const listExists = DATA.get(k);
@@ -94,7 +94,7 @@ export const llen = (conn: any, [k]: string[]) => {
     return;
 };
 
-export const bpop = (conn: any, flag: "r" | "l", [k, timeout]: string[]) => {
+export const bpop = (conn: TAuthenticConn, flag: "r" | "l", [k, timeout]: string[]) => {
     if (!k || typeof k != "string" || tokens.includes(k)) { conn.write("ERROR: Key must be a valid String\r\n"); return; }
     if (timeout != "" && isNaN(Number(timeout))) { conn.write("ERROR: Wrong number of arguments for command\r\n"); return; }
 

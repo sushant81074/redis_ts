@@ -1,13 +1,9 @@
-import * as net from "net";
-import { ETtlType, type TValNum } from "../interfaces";
+import { ETtlType, type TAuthenticConn, type TValNum } from "../interfaces";
 import { calRemainingTime } from "../services/data";
 import { CONN_CMDS, DATA, NET_CONN } from "../cache/data";
 import { onData } from "../controllers";
-import { serializeAndChecker } from "../helpers";
 
-const serialize = (d: Buffer) => d.toString("utf-8").trim();
-
-export const setExpiry = (conn: net.Socket, [k, t]: string[]) => {
+export const setExpiry = (conn: TAuthenticConn, [k, t]: string[]) => {
     const v = DATA.get(k);
     if (!v || !v.v) { conn.write(0 + "\r\n"); return; }
     v.ttl = t;
@@ -17,7 +13,7 @@ export const setExpiry = (conn: net.Socket, [k, t]: string[]) => {
     return;
 };
 
-export const setPExpiry = (conn: net.Socket, [k, t]: string[]) => {
+export const setPExpiry = (conn: TAuthenticConn, [k, t]: string[]) => {
     const v = DATA.get(k);
     if (!v || !v.v) { conn.write(0 + "\r\n"); return; }
     v.ttl = t;
@@ -27,9 +23,8 @@ export const setPExpiry = (conn: net.Socket, [k, t]: string[]) => {
     return;
 };
 
-export const getTtl = (conn: net.Socket, [k]: string[]) => {
+export const getTtl = (conn: TAuthenticConn, [k]: string[]) => {
     const v = DATA.get(k);
-    console.log({ v });
     if (!v || !Object.keys(v).length) { conn.write(-2 + "\r\n"); return; }
     if (!v?.ttl || v?.ttlType == ETtlType.NONE) { conn.write(-1 + "\r\n"); return; }
     let remainingTime = (calRemainingTime(v) / 1000);
@@ -41,7 +36,7 @@ export const getTtl = (conn: net.Socket, [k]: string[]) => {
     return;
 };
 
-export const getPTtl = (conn: net.Socket, [k]: string[]) => {
+export const getPTtl = (conn: TAuthenticConn, [k]: string[]) => {
     const v = DATA.get(k);
     if (!v || !Object.keys(v).length) { conn.write(-2 + "\r\n"); return; }
     if (!v?.ttl || v?.ttlType == ETtlType.NONE) { conn.write(-1 + "\r\n"); return; }
@@ -54,7 +49,7 @@ export const getPTtl = (conn: net.Socket, [k]: string[]) => {
     return;
 };
 
-export const getType = (conn: net.Socket, [k]: string[]) => {
+export const getType = (conn: TAuthenticConn, [k]: string[]) => {
     const v = DATA.get(k);
     if (!v || !Object.keys(v).length) { conn.write("+none\r\n"); return; }
     if (v.ttl && v.ttlType != ETtlType.NONE && calRemainingTime(v) <= 0) {
@@ -65,7 +60,7 @@ export const getType = (conn: net.Socket, [k]: string[]) => {
     return;
 };
 
-export const watch = (conn: net.Socket, wks: string[]) => {
+export const watch = (conn: TAuthenticConn, wks: string[]) => {
     const connAddress = `${conn.remoteAddress}:${conn.remotePort}`;
     let cmdStoreData = CONN_CMDS.get(connAddress) || null;
     if (!cmdStoreData) cmdStoreData = { conn, cmds: [], wks: [], unwks: [] };
@@ -79,7 +74,7 @@ export const watch = (conn: net.Socket, wks: string[]) => {
     return;
 };
 
-export const multi = (conn: net.Socket) => {
+export const multi = (conn: TAuthenticConn) => {
     const connAddress = `${conn.remoteAddress}:${conn.remotePort}`;
     let cmdStoreData = CONN_CMDS.get(connAddress) || null;
     if (!cmdStoreData) cmdStoreData = {
@@ -93,10 +88,10 @@ export const multi = (conn: net.Socket) => {
     return;
 };
 
-export const cmdStore = (conn: net.Socket, cmd: Buffer) => {
+export const cmdStore = (conn: TAuthenticConn, cmd: Buffer) => {
     let connAddress = `${conn.remoteAddress}:${conn.remotePort}`;
     const cmdStoreData = CONN_CMDS.get(connAddress);
-    if (!(cmdStoreData?.conn instanceof net.Socket)) {
+    if (!(cmdStoreData?.conn && cmdStoreData.conn.readyState !== "open")) {
         conn.write("\r\n");
         return;
     }
@@ -106,10 +101,10 @@ export const cmdStore = (conn: net.Socket, cmd: Buffer) => {
     return;
 };
 
-export const exec = (conn: net.Socket) => {
+export const exec = (conn: TAuthenticConn) => {
     let connAddress = `${conn.remoteAddress}:${conn.remotePort}`;
     const cmdStoreData = CONN_CMDS.get(connAddress);
-    if (!(cmdStoreData?.conn instanceof net.Socket)) {
+    if (!(cmdStoreData?.conn && cmdStoreData.conn.readyState !== "open")) {
         conn.write("\r\n");
         return;
     }
@@ -128,7 +123,6 @@ export const exec = (conn: net.Socket) => {
     if (txnDiscarded) return;
     for (const [idx, cmd] of cmdStoreData.cmds.entries()) {
         onData(conn, cmd, true);
-        console.log("executing command:", idx, cmd.toString("utf-8"));
     }
     CONN_CMDS.delete(connAddress);
     conn.write("exec done!\r\n");
@@ -136,7 +130,7 @@ export const exec = (conn: net.Socket) => {
     return;
 };
 
-export const info = (conn: net.Socket) => {
+export const info = (conn: TAuthenticConn) => {
     const mem = process.memoryUsage();
     const infoObj = {
         redis_version: "0.0.0.1",

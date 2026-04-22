@@ -1,11 +1,13 @@
 import * as net from "net";
 import { type DoublyLinkedList } from "../services/doublyLinkedList";
 
-export const tokens = ["px", "ex", "nx", "xx", "pxat", "exat", "echo", "set", "get", "nil", "expiry", "pexpiry", "ttl", "pttl", "sleep", "rpush", "rpop", "lpush", "lpop", "lrange", "llen", "blpop", "brpop", "inc", "incby", "incbyffloat", "dec", "decby"];
+export const tokens = ["px", "ex", "nx", "xx", "pxat", "exat", "echo", "set", "get", "nil", "expiry", "pexpiry", "ttl", "pttl", "sleep", "rpush", "rpop", "lpush", "lpop", "lrange", "llen", "blpop", "brpop", "inc", "incby", "incbyffloat", "dec", "decby", "multi", "exec", "watch", "info"];
 
 export const enum EXNMode { NX = "nx", XX = "xx" }
 export const enum ETtlType { PX = "px", EX = "ex", NONE = "none", PXAT = "pxat", EXAT = "exat" };
 export const enum EDataType { NUMBER = "number", STRING = "string", LIST = "list", SET = "set", HASH = "hash", ZSET = "zset", STREAM = "stream", VECTOR_SET = "vectorset", JSON = "json" };
+
+export type TAuthenticConn = net.Socket & { isAuthentic: boolean; };
 
 export type TValMeta = { ttl: string, ttlType: ETtlType, at: number; dType: EDataType; version: number; };
 
@@ -30,7 +32,7 @@ export type TBoolCallback<v> = (v: v) => boolean;
 export type TNumCallback<v> = (v: v) => number;
 export type TVoidCallback = () => void;
 
-export type TConnMeta = { conn: net.Socket; timeout: number; at: number; };
+export type TConnMeta = { conn: TAuthenticConn; timeout: number; at: number; };
 
 export type TConnString = TConnMeta & { type: EDataType.STRING; };
 export type TConnList = TConnMeta & {
@@ -53,3 +55,17 @@ export type TConnJson = TConnMeta & { type: EDataType.JSON; };
 
 export type TConnMapData = TConnString | TConnList | TConnStream | TConnZSet | TConnSet | TConnHash | TConnVector | TConnJson;
 export type TConnMap = Map<string, TConnMapData[]>;
+export type TConnCmd = {
+    conn: TAuthenticConn,
+    cmds: Buffer[],
+    wks: { [k: string]: string | number; }[],
+    unwks: { [k: string]: string | number; }[],
+};
+export type TUser = {
+    pwds: string[];
+    flgs: string[];
+    ks: string[],
+    cmds: string[];
+    chnls: string[];
+    role: "root_user" | "normal_user";
+};

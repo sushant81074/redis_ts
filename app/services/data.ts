@@ -6,26 +6,14 @@ export const isExpired: TBoolCallback<TValMeta> = (v): boolean => {
     if (!!v.ttl && !!v.ttlType) {
         if (v.ttlType.toLowerCase() == ETtlType.NONE) { return expired; }
         else if (v.ttlType.toLowerCase() == ETtlType.EX) {
-            if (Date.now() > (v.at + (Number(v.ttl) * 1000))) {
-                expired = true;
-                console.log("deleted", v.ttl, v.ttlType);
-            }
+            if (Date.now() > (v.at + (Number(v.ttl) * 1000))) expired = true;
         } else if (v.ttlType.toLowerCase() == ETtlType.PX) {
-            if (Date.now() > v.at + Number(v.ttl)) {
-                expired = true;
-                console.log("deleted", v.ttl, v.ttlType);
-            }
+            if (Date.now() > v.at + Number(v.ttl)) expired = true;
         } else if (v.ttlType.toLowerCase() == ETtlType.EXAT) {
-            if (Date.now() > Number(v.ttl) * 1000) {
-                expired = true;
-                console.log("deleted", v.ttl, v.ttlType);
-            }
+            if (Date.now() > Number(v.ttl) * 1000) expired = true;
         }
         else if (v.ttlType.toLowerCase() == ETtlType.PXAT) {
-            if (Date.now() > Number(v.ttl)) {
-                expired = true;
-                console.log("deleted", v.ttl, v.ttlType);
-            }
+            if (Date.now() > Number(v.ttl)) expired = true;
         }
     }
     return expired;
