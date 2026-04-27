@@ -10,6 +10,7 @@ export class AOF {
     fd!: number;
     vc: TAuthenticConn;
     isRewriteInProgress: boolean;
+    aofSize: number;
     setAbles: string[];
 
     constructor(aofDir: string, aofPath: string) {
@@ -26,7 +27,7 @@ export class AOF {
         this.setAbles = Object.keys(this.aofStates).map(e => e.toLowerCase());
         this.initAOF();
         this.vc = this.initVC();
-
+        this.aofSize = fs.statSync(this.aofStates.aofpath).size || 0;
     }
 
     initAOF() {
@@ -122,6 +123,8 @@ export class AOF {
         if (this.aofStates.appendfsync == EAFsync.ALWAYS) this.fsync();
         else if (this.aofStates.appendfsync == EAFsync.EVERYSEC) this.everySec();
 
+        this.aofSize += Buffer.byteLength(cmd + "\n");
+        console.log(this.aofSize);
         return;
     }
 
