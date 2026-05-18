@@ -5,6 +5,8 @@ export const tokens = ["px", "ex", "nx", "xx", "pxat", "exat", "echo", "set", "g
 export const wCmds = ["set", "del", "expiry", "pexpiry", "inc", "incby", "dec", "decby", "lpush", "rpush", "lpop", "rpop", "xadd", "xdel", "xtrim", "multi", "exec"];
 export const aofDir = "./commands";
 export const aofPath = "./commands/cmd.aof";
+export const aofTempPath = "./commands/temp.aof";
+export const aofSnapshotPath = "./temp/data.json";
 
 export const enum EAOnly { YES = "yes", NO = "no" }
 export const enum EAFsync { ALWAYS = "always", EVERYSEC = "everysec", NO = "no" }
@@ -76,6 +78,8 @@ export type TUser = {
 
 export type TAOFStates = {
     aofpath: string;
+    aoftemppath: string;
+    aofsnapshotpath: string;
     aofdir: string;
     appendonly: EAOnly;
     appendfsync: EAFsync;
